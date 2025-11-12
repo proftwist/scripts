@@ -60,8 +60,8 @@
 ### 🚀 Пример использования
 
 ```bash
-chmod +x reboot_keenetic.sh
-./reboot_keenetic.sh
+chmod +x restart-router
+restart-router
 ```
 
 **Результат выполнения:**
