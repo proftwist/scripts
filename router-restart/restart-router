@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# Скрипт для перезагрузки роутера Кинетик Speedster (KN-3012)
+# Модель: Speedster (KN-3012)
+# Версия KeeneticOS: 4.2.6.3
+
+# Параметры подключения
+ROUTER_IP="192.168.1.1"
+TELNET_PORT="23"
+USERNAME="admin"
+PASSWORD="admin"
+
+echo "Перезагрузка роутера Кинетик Speedster (KN-3012) через telnet..."
+
+# Проверяем, доступен ли роутер
+if ! ping -c 1 -W 5 "$ROUTER_IP" >/dev/null 2>&1; then
+    echo "Ошибка: Роутер $ROUTER_IP недоступен"
+    exit 1
+fi
+
+# Создаем временный файл с командами
+CMD_FILE=$(mktemp)
+cat > "$CMD_FILE" << EOF
+$USERNAME
+$PASSWORD
+system reboot
+quit
+EOF
+
+# Отправляем команды через telnet
+# Используем expect для автоматизации telnet сессии
+expect << EOF > /dev/null 2>&1
+spawn telnet $ROUTER_IP $TELNET_PORT
+expect "Login:"
+send "$USERNAME\r"
+expect "Password:"
+send "$PASSWORD\r"
+expect "(config)>"
+send "system reboot\r"
+expect "(config)>"
+send "quit\r"
+expect eof
+EOF
+
+# Проверяем результат
+if [ $? -eq 0 ]; then
+    echo "Команда перезагрузки отправлена"
+    echo "Роутер должен перезагрузиться в течение нескольких секунд"
+else
+    # Альтернативный способ с использованием here-document
+    {
+        sleep 2
+        echo "$USERNAME"
+        sleep 2
+        echo "$PASSWORD"
+        sleep 3
+        echo "system reboot"
+        sleep 1
+        echo "quit"
+    } | telnet "$ROUTER_IP" "$TELNET_PORT" > /dev/null 2>&1 &
+
+    # Ждем завершения
+    sleep 8
+
+    echo "Команда перезагрузки отправлена"
+    echo "Роутер должен перезагрузиться в течение нескольких секунд"
+fi
+
+# Удаляем временный файл
+rm -f "$CMD_FILE"
